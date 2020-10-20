@@ -15,7 +15,7 @@ const fs = require('fs');
  =============================*/
 
 const rqListener = (req, res) => {
-  console.log(req.url, req.method, req.headers);
+  // console.log(req.url, req.method, req.headers);
   const {url, method} = req;
   if (url === '/') {
     res.setHeader('Content-Type', 'text/html'); // indica el tipus de document que enviarem.
@@ -26,8 +26,8 @@ const rqListener = (req, res) => {
         </head>
         <body>
           <h1>Look mom my first website with node.js yaaaay</h1>
-          <form action="/message" method="POST" name="message">
-            <input type="text">
+          <form action="/message" method="POST" >
+            <input type="text" name="message">
             <button>Send</button>
           </form>
         </body>
@@ -35,13 +35,27 @@ const rqListener = (req, res) => {
     ); // you can also call res.write() many times, for example, one for every line of HTML
     return res.end();
   }
+
   if (url === '/message' && method === 'POST') {
     /* Takes the post request created in the form and writes it into a new file */
-    fs.writeFileSync('message.txt', 'Example text');
-    res.statusCode = 302;
-    res.setHeader('Location', '/');
-    return res.end();
+    const body = [];
+    req.on('data', (chunk) => {
+      // on() is an event listener that responds to the data
+      console.log(chunk);
+      body.push(chunk);
+    });
+    return req.on('end', () => {
+      const parsedBody = Buffer.concat(body).toString();
+      console.log(parsedBody);
+      const message = parsedBody.split('=')[1]
+      fs.writeFile('message.txt', message, (err) => {
+        res.statusCode = 302;
+        res.setHeader('Location', '/');
+        return res.end();
+      });
+    });
   }
+
   res.setHeader('Content-Type', 'text/html'); // indica el tipus de document que enviarem.
   res.write(
     `<html>
